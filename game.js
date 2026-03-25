@@ -4,14 +4,14 @@
 const canvas = document.getElementById('poolTable');
 const ctx = canvas.getContext('2d');
 
-// 游戏常量
+// 游戏常量 - 优化为更真实的物理效果
 const TABLE_WIDTH = 900;
 const TABLE_HEIGHT = 450;
 const BALL_RADIUS = 12;
 const POCKET_RADIUS = 25;
-const FRICTION = 0.985;
-const MIN_VELOCITY = 0.1;
-const CUSHION_BOUNCE = 0.7;
+const FRICTION = 0.992; // 降低摩擦力，让球滚动更远（原 0.985）
+const MIN_VELOCITY = 0.05; // 降低停止阈值（原 0.1）
+const CUSHION_BOUNCE = 0.85; // 提高库边反弹系数，减少能量损失（原 0.7）
 
 // 球袋位置
 const pockets = [
@@ -439,7 +439,7 @@ function shoot() {
     const mouseY = lastMouseY || cueBall.y;
     
     const angle = Math.atan2(mouseY - cueBall.y, mouseX - cueBall.x);
-    const force = power / 100 * 15; // 最大力度
+    const force = power / 100 * 35; // 最大力度从 15 提升到 35，实现大力击球效果
     
     // 母球沿瞄准线方向滚动（去掉负号）
     cueBall.vx = Math.cos(angle) * force;
