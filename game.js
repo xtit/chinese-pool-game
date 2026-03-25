@@ -441,8 +441,9 @@ function shoot() {
     const angle = Math.atan2(mouseY - cueBall.y, mouseX - cueBall.x);
     const force = power / 100 * 15; // 最大力度
     
-    cueBall.vx = -Math.cos(angle) * force;
-    cueBall.vy = -Math.sin(angle) * force;
+    // 母球沿瞄准线方向滚动（去掉负号）
+    cueBall.vx = Math.cos(angle) * force;
+    cueBall.vy = Math.sin(angle) * force;
     
     power = 0;
     isCharging = false;
