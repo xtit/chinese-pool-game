@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中式台球 - Chinese Pool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #poolTable {
+            background: linear-gradient(145deg, #2d5016 0%, #1a3009 100%);
+            border: 15px solid #8b4513;
+            border-radius: 8px;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .control-panel {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        #shootBtn {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        #shootBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(238,90,36,0.4);
+        }
+
+        #resetBtn {
+            background: linear-gradient(145deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        #resetBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(68,160,143,0.4);
+        }
+
+        #powerBar {
+            width: 200px;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #fff;
+        }
+
+        #powerFill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.1s;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            color: #ccc;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 24px;
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎱 中式台球 Chinese Pool</h1>
+    
+    <div id="gameContainer">
+        <canvas id="poolTable" width="900" height="450"></canvas>
+        <div id="ui">
+            <div>当前玩家：<span id="currentPlayer">玩家 1</span></div>
+            <div>力量：<span id="powerValue">0</span>%</div>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <div class="control-panel">
+        <button id="shootBtn">击球 (Space)</button>
+        <button id="resetBtn">重新开始</button>
+        <div id="powerBar"><div id="powerFill"></div></div>
+    </div>
+
+    <div class="instructions">
+        <p><strong>操作说明：</strong>鼠标移动控制瞄准方向，按住空格或点击"击球"按钮蓄力，松开击球。按 R 键重新开始游戏。</p>
+        <p><strong>游戏规则：</strong>中式台球规则，先将所有自己的目标球打入袋中，最后打入黑八获胜。犯规则交换发球权。</p>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
