@@ -50,6 +50,42 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
+        .score-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 15px;
+            border-radius: 8px;
+            min-width: 200px;
+        }
+
+        .score-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .player1-score {
+            background: rgba(255, 215, 0, 0.3);
+            border-left: 4px solid #FFD700;
+        }
+
+        .player2-score {
+            background: rgba(0, 191, 255, 0.3);
+            border-left: 4px solid #00BFFF;
+        }
+
+        .current-turn {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
         .control-panel {
             margin-top: 20px;
             display: flex;
@@ -125,6 +161,34 @@
             display: none;
             z-index: 100;
         }
+
+        .switch-player-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 60px;
+            border-radius: 15px;
+            font-size: 32px;
+            font-weight: bold;
+            display: none;
+            z-index: 101;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -136,7 +200,23 @@
             <div>当前玩家：<span id="currentPlayer">玩家 1</span></div>
             <div>力量：<span id="powerValue">0</span>%</div>
         </div>
+        <div class="score-panel">
+            <div class="score-item player1-score current-turn" id="player1Panel">
+                <strong>🟡 玩家 1（全色球）</strong><br>
+                进球：<span id="player1Potted">0</span>/7 | 剩余：<span id="player1Remaining">7</span>
+            </div>
+            <div class="score-item player2-score" id="player2Panel">
+                <strong>🔵 玩家 2（花色球）</strong><br>
+                进球：<span id="player2Potted">0</span>/7 | 剩余：<span id="player2Remaining">7</span>
+            </div>
+            <div style="margin-top: 10px; font-size: 14px;">
+                犯规次数：<span id="foulCount">P1: 0 | P2: 0</span>
+            </div>
+        </div>
         <div id="message"></div>
+        <div class="switch-player-banner" id="switchBanner">
+            🎱 玩家 2 回合
+        </div>
     </div>
 
     <div class="control-panel">
@@ -147,7 +227,12 @@
 
     <div class="instructions">
         <p><strong>操作说明：</strong>鼠标移动控制瞄准方向，按住空格或点击"击球"按钮蓄力，松开击球。按 R 键重新开始游戏。</p>
-        <p><strong>游戏规则：</strong>中式台球规则，先将所有自己的目标球打入袋中，最后打入黑八获胜。犯规则交换发球权。</p>
+        <p><strong>游戏规则：</strong>
+            🎯 开球后首先进球的玩家获得对应花色（全色 1-7 / 花色 9-15）<br>
+            🎯 将自己所有目标球打入袋后，方可打黑八<br>
+            🎯 白球进袋犯规，对手获得自由球（可任意摆放白球）<br>
+            🎯 提前打入黑八判负，清台后打入黑八获胜
+        </p>
     </div>
 
     <script src="game.js"></script>

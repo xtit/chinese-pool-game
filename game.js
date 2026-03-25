@@ -37,6 +37,12 @@ let black8Ball = null;
 let gameOver = false;
 let foulCount = { 1: 0, 2: 0 };
 let assignedGroups = false;
+let player1Group = 'solids'; // 全色球
+let player2Group = 'stripes'; // 花色球
+let pottedBallsThisTurn = []; // 当前回合进球
+let firstBallPottedThisTurn = null; // 当前回合第一个进球
+let isFreeBall = false; // 是否自由球状态
+let freeBallPosition = null; // 自由球摆放位置
 
 // 球类
 class Ball {
@@ -144,7 +150,7 @@ class Ball {
     }
 }
 
-// 初始化游戏
+// 初始化游戏 - 添加开球提示
 function initGame() {
     balls = [];
     player1Balls = [];
@@ -153,6 +159,11 @@ function initGame() {
     assignedGroups = false;
     gameOver = false;
     foulCount = { 1: 0, 2: 0 };
+    pottedBallsThisTurn = [];
+    firstBallPottedThisTurn = null;
+    isFreeBall = false;
+    player1Group = 'solids';
+    player2Group = 'stripes';
     
     // 创建白球
     cueBall = new Ball(TABLE_WIDTH / 4, TABLE_HEIGHT / 2, 0, '#ffffff');
@@ -195,7 +206,7 @@ function initGame() {
     let ballIndex = 0;
     const rows = 5;
     
-    for (let row = 0; row < rows; row++) {
+    for (let row = 0; row< rows; row++) {
         for (let col = 0; col <= row; col++) {
             const x = startX + row * (ballSpacing * Math.cos(Math.PI / 6));
             const y = startY + (col - row / 2) * ballSpacing;
@@ -226,22 +237,44 @@ function initGame() {
 
     updateUI();
     hideMessage();
+    
+    // 显示开球提示
+    setTimeout(() => {
+        showMessage("🎱 玩家 1 开球！");
+        setTimeout(hideMessage, 2000);
+    }, 500);
 }
 
-// 处理球进袋
+// 处理球进袋 - 完善游戏规则
 function handleBallPotted(ball) {
+    // 记录当前回合进球
+    pottedBallsThisTurn.push(ball);
+    if (!firstBallPottedThisTurn) {
+        firstBallPottedThisTurn = ball;
+    }
+    
     if (ball === cueBall) {
         // 白球进袋 - 犯规
         foulCount[currentPlayer]++;
-        showMessage("犯规！白球进袋");
+        showMessage(`❌ 犯规！白球进袋 - 玩家${currentPlayer}`);
+        
+        // 设置自由球状态
+        isFreeBall = true;
+        
         setTimeout(() => {
             ball.inPocket = false;
-            ball.x = TABLE_WIDTH / 4;
-            ball.y = TABLE_HEIGHT / 2;
+            // 自由球可以重新摆放
+            if (isFreeBall) {
+                showMessage("💡 对手获得自由球！点击桌面摆放白球");
+            } else {
+                ball.x = TABLE_WIDTH / 4;
+                ball.y = TABLE_HEIGHT / 2;
+            }
             ball.vx = 0;
             ball.vy = 0;
             switchPlayer();
-        }, 1000);
+        }, 1500);
+        
     } else if (ball === black8Ball) {
         // 黑八进袋
         const playerBalls = currentPlayer === 1 ? player1Balls : player2Balls;
@@ -249,47 +282,135 @@ function handleBallPotted(ball) {
         
         if (allPotted) {
             gameOver = true;
-            showMessage(`玩家${currentPlayer}获胜！🎉`);
+            showMessage(`🏆 玩家${currentPlayer}清台后打入黑八，获胜！🎉`);
         } else {
             gameOver = true;
-            showMessage(`玩家${currentPlayer}犯规！提前打入黑八，对方获胜！`);
+            showMessage(`❌ 玩家${currentPlayer}提前打入黑八，对方获胜！`);
         }
+        
     } else {
         // 普通球进袋
         if (!assignedGroups && !gameOver) {
             // 首次进球时分配花色
             assignedGroups = true;
-            if (ball.number < 8) {
-                showMessage(`玩家${currentPlayer}获得全色球`);
+            if (ball.number< 8) {
+                player1Group = 'solids';
+                player2Group = 'stripes';
+                showMessage(`🎯 玩家${currentPlayer}获得全色球（1-7）`);
             } else {
-                showMessage(`玩家${currentPlayer}获得花色球`);
+                player1Group = 'stripes';
+                player2Group = 'solids';
+                showMessage(`🎯 玩家${currentPlayer}获得花色球（9-15）`);
                 // 交换两组球
                 [player1Balls, player2Balls] = [player2Balls, player1Balls];
             }
-            setTimeout(hideMessage, 1500);
+            updateScorePanel();
+            setTimeout(hideMessage, 2000);
+            
+        } else if (assignedGroups) {
+            // 检查是否是自己组的球
+            const isOwnBall = (currentPlayer === 1 && player1Group === 'solids' && ball.number < 8) ||
+                            (currentPlayer === 1 && player1Group === 'stripes' && ball.number > 8) ||
+                            (currentPlayer === 2 && player2Group === 'solids' && ball.number< 8) ||
+                            (currentPlayer === 2 && player2Group === 'stripes' && ball.number > 8);
+            
+            if (!isOwnBall) {
+                // 打入对手的球 - 有效但不换发
+                showMessage(`⚠️ 打进了对手的球`);
+                setTimeout(() => {
+                    if (allBallsStopped() && !gameOver) {
+                        switchPlayer();
+                    }
+                }, 1000);
+                return; // 不换发
+            }
         }
         
-        // 检查是否需要切换玩家
+        // 检查是否清台
         const playerBalls = currentPlayer === 1 ? player1Balls : player2Balls;
         const remainingBalls = playerBalls.filter(b => !b.inPocket).length;
         
         if (remainingBalls === 0 && !gameOver) {
-            showMessage(`玩家${currentPlayer}清台！准备打黑八`);
-            setTimeout(hideMessage, 1500);
+            showMessage(`🔥 玩家${currentPlayer}清台！可以打黑八了！`);
+            updateScorePanel();
+            setTimeout(hideMessage, 2000);
+        } else {
+            updateScorePanel();
         }
     }
 }
 
-// 切换玩家
+// 切换玩家 - 添加动画提示
 function switchPlayer() {
+    const oldPlayer = currentPlayer;
     currentPlayer = currentPlayer === 1 ? 2 : 1;
+    
+    // 重置回合状态
+    pottedBallsThisTurn = [];
+    firstBallPottedThisTurn = null;
+    
+    // 显示玩家切换横幅
+    showSwitchPlayerBanner();
+    
     updateUI();
 }
 
-// 更新 UI
+// 显示玩家切换横幅
+function showSwitchPlayerBanner() {
+    const banner = document.getElementById('switchBanner');
+    if (banner) {
+        banner.textContent = `🎱 玩家${currentPlayer} 回合`;
+        banner.style.display = 'block';
+        
+        // 2 秒后自动隐藏
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 2000);
+    }
+}
+
+// 更新 UI - 完善计分显示
 function updateUI() {
     document.getElementById('currentPlayer').textContent = `玩家${currentPlayer}`;
     document.getElementById('powerValue').textContent = Math.round(power);
+    
+    // 更新计分面板高亮
+    const player1Panel = document.getElementById('player1Panel');
+    const player2Panel = document.getElementById('player2Panel');
+    
+    if (currentPlayer === 1) {
+        player1Panel.classList.add('current-turn');
+        player2Panel.classList.remove('current-turn');
+    } else {
+        player2Panel.classList.add('current-turn');
+        player1Panel.classList.remove('current-turn');
+    }
+    
+    updateScorePanel();
+}
+
+// 更新计分面板
+function updateScorePanel() {
+    const p1Potted = player1Balls.filter(b => b.inPocket).length;
+    const p1Remaining = player1Balls.length - p1Potted;
+    const p2Potted = player2Balls.filter(b => b.inPocket).length;
+    const p2Remaining = player2Balls.length - p2Potted;
+    
+    // 更新显示
+    const p1Label = player1Group === 'solids' ? '全色球' : '花色球';
+    const p2Label = player2Group === 'solids' ? '全色球' : '花色球';
+    const p1Icon = player1Group === 'solids' ? '🟡' : '🔵';
+    const p2Icon = player2Group === 'solids' ? '🟡' : '🔵';
+    
+    document.getElementById('player1Panel').querySelector('strong').innerHTML = `${p1Icon} 玩家 1（${p1Label}）`;
+    document.getElementById('player2Panel').querySelector('strong').innerHTML = `${p2Icon} 玩家 2（${p2Label}）`;
+    
+    document.getElementById('player1Potted').textContent = p1Potted;
+    document.getElementById('player1Remaining').textContent = p1Remaining;
+    document.getElementById('player2Potted').textContent = p2Potted;
+    document.getElementById('player2Remaining').textContent = p2Remaining;
+    
+    document.getElementById('foulCount').textContent = `P1: ${foulCount[1]} | P2: ${foulCount[2]}`;
 }
 
 // 显示消息
@@ -357,6 +478,9 @@ function allBallsStopped() {
 
 // 绘制球杆
 function drawCue() {
+    // 自由球模式不显示球杆
+    if (isFreeBall) return;
+    
     if (!isAiming || !allBallsStopped() || !cueBall || cueBall.inPocket) return;
     
     const mouseX = lastMouseX || cueBall.x + 100;
@@ -391,6 +515,28 @@ function drawCue() {
     ctx.restore();
 }
 
+// 绘制自由球指示器
+function drawFreeBallIndicator() {
+    if (!isFreeBall || !cueBall || cueBall.inPocket) return;
+    
+    // 绘制白球摆放位置的半透明圆圈
+    ctx.beginPath();
+    ctx.arc(cueBall.x, cueBall.y, BALL_RADIUS * 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // 绘制提示文字
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('点击桌面摆放白球', cueBall.x, cueBall.y - 30);
+}
+
 // 绘制球袋
 function drawPockets() {
     ctx.fillStyle = '#1a1a1a';
@@ -417,6 +563,9 @@ function gameLoop() {
     
     // 检测碰撞
     checkCollisions();
+    
+    // 绘制自由球指示器
+    drawFreeBallIndicator();
     
     // 绘制球杆
     drawCue();
@@ -465,6 +614,44 @@ canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
     lastMouseX = e.clientX - rect.left;
     lastMouseY = e.clientY - rect.top;
+    
+    // 自由球摆放模式
+    if (isFreeBall && cueBall && !cueBall.inPocket) {
+        // 在桌面上移动白球（不进入袋口区域）
+        cueBall.x = Math.max(BALL_RADIUS, Math.min(TABLE_WIDTH - BALL_RADIUS, lastMouseX));
+        cueBall.y = Math.max(BALL_RADIUS, Math.min(TABLE_HEIGHT - BALL_RADIUS, lastMouseY));
+    }
+});
+
+// 点击桌面摆放自由球
+canvas.addEventListener('click', (e) => {
+    if (isFreeBall && allBallsStopped()) {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        
+        // 确保不会重叠其他球
+        let canPlace = true;
+        for (let ball of balls) {
+            if (ball !== cueBall && !ball.inPocket) {
+                const dx = clickX - ball.x;
+                const dy = clickY - ball.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < BALL_RADIUS * 2.5) {
+                    canPlace = false;
+                    break;
+                }
+            }
+        }
+        
+        if (canPlace) {
+            cueBall.x = clickX;
+            cueBall.y = clickY;
+            isFreeBall = false;
+            showMessage("✅ 自由球已摆放");
+            setTimeout(hideMessage, 1000);
+        }
+    }
 });
 
 // 蓄力控制
