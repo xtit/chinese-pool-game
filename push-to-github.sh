@@ -1,92 +1,76 @@
 #!/bin/bash
 
-# 中式台球游戏 - 一键推送到 GitHub 脚本
-# 使用方法：./push-to-github.sh YOUR_GITHUB_USERNAME
+# 中式台球游戏 - GitHub 推送脚本
+# 作者：徐杰
+# 日期：2026-03-25
 
-set -e
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-echo -e "${GREEN}🎱 中式台球游戏 - GitHub 部署工具${NC}\n"
-
-# 检查参数
-if [ -z "$1" ]; then
-    echo -e "${YELLOW}用法:${NC} ./push-to-github.sh YOUR_GITHUB_USERNAME"
-    echo ""
-    echo "例如：./push-to-github.sh xujie123"
-    echo ""
-    read -p "请输入你的 GitHub 用户名：" GITHUB_USER
-else
-    GITHUB_USER=$1
-fi
-
-# 检查 Git 是否已安装
-if ! command -v git &> /dev/null; then
-    echo -e "${RED}错误：Git 未安装，请先安装 Git${NC}"
-    exit 1
-fi
-
-# 进入项目目录
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$SCRIPT_DIR"
-
-echo -e "\n${GREEN}✓ 项目目录:${NC} $PWD"
-
-# 更新远程仓库地址
-REMOTE_URL="https://github.com/${GITHUB_USER}/chinese-pool-game.git"
-echo -e "\n${YELLOW}正在设置远程仓库...${NC}"
-git remote set-url origin $REMOTE_URL
-echo -e "${GREEN}✓ 远程仓库:${NC} $REMOTE_URL"
-
-# 检查是否有未提交的更改
-if [[ -n $(git status -s) ]]; then
-    echo -e "\n${YELLOW}检测到未提交的更改，正在提交...${NC}"
-    git add .
-    git commit -m "Auto-commit before deploy 🚀"
-fi
-
-# 推送到 GitHub
-echo -e "\n${YELLOW}正在推送到 GitHub...${NC}"
-echo -e "${YELLOW}提示：如果提示输入密码，请使用 Personal Access Token${NC}"
-echo -e "${YELLOW}Token 获取：https://github.com/settings/tokens${NC}"
+echo "🎱 中式台球游戏 - GitHub 部署"
+echo "================================"
 echo ""
 
-if git push -u origin main; then
+# 检查是否在正确的目录
+if [ ! -f "index.html" ]; then
+    echo "❌ 错误：请在 chinese-pool-game 目录下运行此脚本"
+    exit 1
+fi
+
+echo "✅ 检测到游戏文件"
+echo ""
+
+# 配置 Git 用户信息（如果未配置）
+git config user.name "xujie123" 2>/dev/null || true
+git config user.email "xjy@xtit.net" 2>/dev/null || true
+
+echo "📝 Git 用户信息已配置"
+echo ""
+
+# 确保在 main 分支
+git branch -M main 2>/dev/null || true
+echo "✅ 当前分支：main"
+echo ""
+
+# 添加所有文件
+echo "📦 准备提交文件..."
+git add .
+git commit -m "🎱 Chinese Pool Game - Ready for deployment" 2>/dev/null || echo "ℹ️  没有新文件需要提交"
+echo ""
+
+# 设置远程仓库
+echo "🔗 配置远程仓库..."
+git remote remove origin 2>/dev/null || true
+git remote add origin https://github.com/xujie123/chinese-pool-game.git
+echo "✅ 远程仓库已配置：https://github.com/xujie123/chinese-pool-game.git"
+echo ""
+
+# 推送代码
+echo "🚀 开始推送代码到 GitHub..."
+echo ""
+echo "⚠️  当提示输入时："
+echo "   - Username: xujie123"
+echo "   - Password: 粘贴你的 Personal Access Token (以 ghp_ 开头)"
+echo ""
+echo "💡 如果没有 Token，请访问：https://github.com/settings/tokens"
+echo "   创建一个新的 token，勾选 'repo' 权限"
+echo ""
+read -p "按回车键继续..."
+
+git push -u origin main
+
+if [ $? -eq 0 ]; then
     echo ""
-    echo -e "${GREEN}===========================================${NC}"
-    echo -e "${GREEN}✅ 推送成功！${NC}"
-    echo -e "${GREEN}===========================================${NC}"
+    echo "🎉 推送成功！"
     echo ""
-    echo -e "${YELLOW}接下来请执行以下步骤:${NC}"
+    echo "🌐 访问你的游戏："
+    echo "   https://xujie123.github.io/chinese-pool-game/"
     echo ""
-    echo "1️⃣  打开仓库页面:"
-    echo -e "   ${GREEN}https://github.com/${GITHUB_USER}/chinese-pool-game${NC}"
-    echo ""
-    echo "2️⃣  启用 GitHub Pages:"
-    echo "   - 点击 Settings → Pages"
-    echo "   - Source: Deploy from a branch"
-    echo "   - Branch: main → root"
-    echo "   - 点击 Save"
-    echo ""
-    echo "3️⃣  等待 1-2 分钟后访问:"
-    echo -e "   ${GREEN}https://${GITHUB_USER}.github.io/chinese-pool-game/${NC}"
-    echo ""
-    echo -e "${GREEN}🎉 恭喜！你的游戏将向全世界开放！${NC}"
+    echo "📋 GitHub 仓库地址："
+    echo "   https://github.com/xujie123/chinese-pool-game"
     echo ""
 else
     echo ""
-    echo -e "${RED}❌ 推送失败${NC}"
+    echo "❌ 推送失败，请检查："
+    echo "   1. GitHub 仓库是否已创建"
+    echo "   2. Token 是否正确"
+    echo "   3. 网络连接是否正常"
     echo ""
-    echo -e "${YELLOW}可能的解决方案:${NC}"
-    echo "1. 确保已在 GitHub 创建仓库：chinese-pool-game"
-    echo "2. 使用 Personal Access Token 代替密码"
-    echo "3. 检查网络连接"
-    echo ""
-    echo -e "${YELLOW}手动推送命令:${NC}"
-    echo "git push https://YOUR_USERNAME:YOUR_TOKEN@github.com/YOUR_USERNAME/chinese-pool-game.git main"
-    echo ""
-    exit 1
 fi
